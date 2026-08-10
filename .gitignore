@@ -1,5 +1,5 @@
-/project/node_modules/
-/project/.env
+node_modules/
+.env
 
 # Logs
 *.log
@@ -10,7 +10,7 @@ npm-debug.log*
 *.pid.lock
 
 # Coverage
-/project/coverage/
+coverage/
 
 # OS/editor files
 .DS_Store
