@@ -1,0 +1,18 @@
+/project/node_modules/
+/project/.env
+
+# Logs
+*.log
+npm-debug.log*
+
+# Runtime data
+*.pid
+*.pid.lock
+
+# Coverage
+/project/coverage/
+
+# OS/editor files
+.DS_Store
+Thumbs.db
+.vscode/
