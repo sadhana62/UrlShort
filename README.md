@@ -231,13 +231,7 @@ Response includes:
 - `clicks_over_time`
 - `top_referrers`
 
-## Interview talking points
 
-- Why cache-aside needs invalidation discipline
-- Why distributed IDs reduce central coordination
-- Why rate limiting belongs in shared infra for horizontally scaled apps
-- Why redirect flows should avoid synchronous side effects
-- Why short-code hash sharding is a natural scale-out strategy here
 
 ## Current limitations
 
