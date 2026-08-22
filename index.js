@@ -1,9 +1,61 @@
 const express = require('express');
 const authRoutes = require('./routes/auth');
+const linkRoutes = require('./routes/links');
+const redirectRoutes = require('./routes/redirect');
+const { initializeDatabase, pool } = require('./db');
+const { initializeRedis, isRedisReady, closeRedis } = require('./services/redisClient');
+const { getAnalyticsQueueStats, startAnalyticsWorker, stopAnalyticsWorker } = require('./services/analyticsQueue');
 require('dotenv').config();
 
 const app = express();
 app.use(express.json());
 app.use('/api/auth', authRoutes);
 
-app.listen(3000, () => console.log('Server running on port 3000'));
+app.use('/api/links', linkRoutes);
+app.get('/health', async (_req, res) => {
+  let databaseHealthy = true;
+
+  try {
+    await pool.query('SELECT 1');
+  } catch (error) {
+    databaseHealthy = false;
+  }
+
+  const redisHealthy = isRedisReady();
+  const analytics = getAnalyticsQueueStats();
+  const statusCode = databaseHealthy ? 200 : 503;
+
+  return res.status(statusCode).json({
+    status: databaseHealthy ? 'ok' : 'degraded',
+    database: databaseHealthy ? 'up' : 'down',
+    redis: redisHealthy ? 'up' : 'degraded',
+    analytics,
+  });
+});
+app.use('/', redirectRoutes);
+
+initializeDatabase()
+  .then(async () => {
+    await initializeRedis();
+    startAnalyticsWorker();
+    app.listen(3000, () => console.log('Server running on port 3000'));
+  })
+  .catch((err) => {
+    console.error('Database initialization failed:', err.message);
+    process.exit(1);
+  });
+
+async function shutdown() {
+  await stopAnalyticsWorker();
+  await closeRedis();
+  await pool.end();
+  process.exit(0);
+}
+
+process.on('SIGINT', () => {
+  void shutdown();
+});
+
+process.on('SIGTERM', () => {
+  void shutdown();
+});
