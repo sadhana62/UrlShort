@@ -17,9 +17,13 @@ router.post('/signup', async (req, res) => {
       'INSERT INTO users (email, password_hash) VALUES ($1, $2) RETURNING id, email',
       [email, password_hash]
     );
-    res.status(201).json(result.rows[0]);
+    return res.status(201).json(result.rows[0]);
   } catch (err) {
-    res.status(400).json({ error: err.message });
+    if (err.code === '23505') {
+      return res.status(409).json({ error: 'Email already exists' });
+    }
+
+    return res.status(400).json({ error: err.message });
   }
 });
 

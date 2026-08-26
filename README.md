@@ -2,6 +2,8 @@
 
 This project is a Node.js + Express URL shortener backed by PostgreSQL, with Redis used for hot-link caching and distributed rate limiting.
 
+> For a deep dive into **why** each design decision was made (caching, rate limiting, Snowflake IDs, Docker, and more), see [PROJECT_DOCUMENTATION.md](./PROJECT_DOCUMENTATION.md).
+
 ## What this project now demonstrates
 
 - JWT-based signup/login and authenticated link management
@@ -10,6 +12,7 @@ This project is a Node.js + Express URL shortener backed by PostgreSQL, with Red
 - Redis-backed sliding-window rate limiting on link creation
 - Async analytics ingestion so redirects do not block on write-heavy side effects
 - Basic health checks and analytics endpoints
+- Automated tests (Jest + Supertest) and a Postman collection covering every endpoint
 
 ## Stack
 
@@ -19,16 +22,75 @@ This project is a Node.js + Express URL shortener backed by PostgreSQL, with Red
 - Redis
 - JWT
 - bcrypt
+- Docker (for local Postgres + Redis)
+- Jest + Supertest (automated testing)
 
-## Run locally
+## Prerequisites
 
-1. Create PostgreSQL database `linkshortener`.
-2. Start Redis locally on `redis://127.0.0.1:6379`.
-3. Copy `.env.example` to `.env` and update values.
-4. Install dependencies with `npm install`.
-5. Start the app with `node index.js`.
+- [Node.js](https://nodejs.org/) (v18+ recommended)
+- [Docker Desktop](https://www.docker.com/products/docker-desktop/) — used to run Postgres and Redis locally without installing them directly on your machine
 
-The server starts on `http://localhost:3000`.
+## Run locally with Docker
+
+This is the recommended way to run the project — it spins up Postgres and Redis in containers so you don't need to install either one natively.
+
+1. **Start Postgres and Redis:**
+   ```bash
+   docker compose up -d
+   ```
+   This reads `docker-compose.yml` and starts two containers: `linkshortener-postgres` (Postgres 16) and `linkshortener-redis` (Redis 7), with their data stored in named Docker volumes so it persists across restarts.
+
+2. **Confirm both containers are running:**
+   ```bash
+   docker ps
+   ```
+   You should see both containers with status `Up`.
+
+3. **Set up your environment file:**
+   ```bash
+   cp .env.example .env
+   ```
+   The default values in `.env.example` already match the Docker Compose setup, so no edits are required for local development — just replace `JWT_SECRET` with your own random string.
+
+4. **Install dependencies:**
+   ```bash
+   npm install
+   ```
+
+5. **Start the app:**
+   ```bash
+   npm start
+   ```
+   On first run, the app automatically creates the `users`, `links`, and `link_clicks` tables (see `db.js`) — no manual schema setup needed. The server starts on `http://localhost:3000`.
+
+6. **Verify it's working:**
+   ```bash
+   curl http://localhost:3000/health
+   ```
+   A healthy response looks like:
+   ```json
+   { "status": "ok", "database": "up", "redis": "up", "analytics": { "queuedEvents": 0 } }
+   ```
+
+### Stopping and resetting
+
+- **Stop containers (keep data):** `docker compose down`
+- **Stop containers AND delete all data** (useful if you want a completely clean database): `docker compose down -v`, then verify with `docker volume ls` that the volumes are actually gone before running `docker compose up -d` again.
+
+## Running the tests
+
+Both test approaches run against a **real** running server (with real Postgres/Redis behind it), not mocks — this project's interesting behavior (caching, rate limiting) can only be verified against real infrastructure.
+
+**Automated (Jest + Supertest):**
+```bash
+# In one terminal — leave it running:
+npm start
+
+# In a second terminal:
+npm test
+```
+
+**Postman:** import `postman_collection.json` into Postman and run the collection top to bottom — it auto-captures tokens and IDs between requests.
 
 ## Environment variables
 
@@ -241,7 +303,6 @@ Response includes:
 
 ## Current limitations
 
-- no automated tests yet
 - async analytics queue is in-memory, not durable
 - no custom aliases yet
 - no background dead-letter handling for failed analytics writes

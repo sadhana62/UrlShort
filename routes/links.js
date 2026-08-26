@@ -6,9 +6,9 @@ const { generateId } = require('../utils/snowflake');
 const { isValidUrl } = require('../utils/url');
 const { invalidateCachedLink } = require('../services/linkCache');
 const { rateLimitShorten } = require('../middleware/rateLimit');
+
 const router = express.Router();
 
-// CREATE a short link
 router.post('/', authMiddleware, rateLimitShorten, async (req, res) => {
   const { original_url } = req.body;
   const userId = req.user.userId;
@@ -18,20 +18,15 @@ router.post('/', authMiddleware, rateLimitShorten, async (req, res) => {
   }
 
   try {
-    // check if this user already shortened this exact URL
     const existing = await pool.query(
-      'SELECT * FROM links WHERE user_id = $1 AND original_url = $2',
+      `SELECT id, short_code, original_url, is_active, created_at, updated_at
+       FROM links
+       WHERE user_id = $1 AND original_url = $2`,
       [userId, original_url]
     );
 
     if (existing.rows.length > 0) {
-      const link = existing.rows[0];
-      return res.json({
-        id: link.id,
-        short_code: link.short_code,
-        original_url: link.original_url,
-        created_at: link.created_at,
-      });
+      return res.status(200).json(existing.rows[0]);
     }
 
     const generatedId = generateId();
@@ -39,40 +34,31 @@ router.post('/', authMiddleware, rateLimitShorten, async (req, res) => {
     const result = await pool.query(
       `INSERT INTO links (id, user_id, short_code, original_url)
        VALUES ($1, $2, $3, $4)
-       RETURNING *`,
+       RETURNING id, short_code, original_url, is_active, created_at, updated_at`,
       [generatedId.toString(), userId, shortCode, original_url]
     );
-    const newLink = result.rows[0];
 
-    res.status(201).json({
-      id: newLink.id,
-      short_code: newLink.short_code,
-      original_url: newLink.original_url,
-      created_at: newLink.created_at,
-    });
-  } catch (err) {
-    res.status(400).json({ error: err.message });
+    return res.status(201).json(result.rows[0]);
+  } catch (error) {
+    return res.status(500).json({ error: error.message });
   }
 });
 
-// LIST all links for the logged-in user
 router.get('/', authMiddleware, async (req, res) => {
   const userId = req.user.userId;
+
   try {
     const result = await pool.query(
-      'SELECT * FROM links WHERE user_id = $1 ORDER BY created_at DESC',
+      `SELECT id, short_code, original_url, is_active, created_at, updated_at
+       FROM links
+       WHERE user_id = $1
+       ORDER BY created_at DESC`,
       [userId]
     );
-    const links = result.rows.map(link => ({
-      id: link.id,
-      short_code: link.short_code,
-      original_url: link.original_url,
-      is_active: link.is_active,
-      created_at: link.created_at,
-    }));
-    res.json(links);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
+
+    return res.json(result.rows);
+  } catch (error) {
+    return res.status(500).json({ error: error.message });
   }
 });
 
@@ -93,8 +79,8 @@ router.get('/:id', authMiddleware, async (req, res) => {
     }
 
     return res.json(result.rows[0]);
-  } catch (err) {
-    return res.status(500).json({ error: err.message });
+  } catch (error) {
+    return res.status(500).json({ error: error.message });
   }
 });
 
@@ -109,7 +95,9 @@ router.put('/:id', authMiddleware, async (req, res) => {
 
   try {
     const existing = await pool.query(
-      'SELECT id, short_code, original_url, is_active FROM links WHERE id = $1 AND user_id = $2',
+      `SELECT id, short_code, original_url, is_active
+       FROM links
+       WHERE id = $1 AND user_id = $2`,
       [linkId, userId]
     );
 
@@ -159,7 +147,6 @@ router.delete('/:id', authMiddleware, async (req, res) => {
   }
 });
 
-// ANALYTICS for one link owned by the logged-in user
 router.get('/:id/stats', authMiddleware, async (req, res) => {
   const userId = req.user.userId;
   const linkId = req.params.id;
@@ -206,8 +193,8 @@ router.get('/:id/stats', authMiddleware, async (req, res) => {
       })),
       top_referrers: topReferrersResult.rows,
     });
-  } catch (err) {
-    return res.status(500).json({ error: err.message });
+  } catch (error) {
+    return res.status(500).json({ error: error.message });
   }
 });
 
