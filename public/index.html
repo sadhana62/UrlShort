@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#101935" />
+    <title>Shortly — Link management, simplified</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=DM+Mono&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <div class="ambient ambient-one"></div><div class="ambient ambient-two"></div>
+    <main class="shell">
+      <nav class="nav">
+        <a class="brand" href="/"><span class="brand-mark">S</span>shortly</a>
+        <div class="nav-actions guest-only"><button class="text-button" data-open-auth="login">Log in</button><button class="button small" data-open-auth="signup">Get started <span>→</span></button></div>
+        <div class="nav-actions user-only"><span id="user-email" class="user-email"></span><button id="logout" class="text-button">Log out</button></div>
+      </nav>
+
+      <section class="hero guest-only">
+        <div class="eyebrow"><i></i> Link management, simplified</div>
+        <h1>Every link deserves<br /><em>a better destination.</em></h1>
+        <p>Shorten, organize, and understand the links that connect your work to the world.</p>
+        <div class="hero-actions"><button class="button" data-open-auth="signup">Start for free <span>→</span></button><button class="play-button" data-open-auth="login"><b>↗</b> Access your workspace</button></div>
+        <div class="trust-row"><span>Fast redirects</span><span>Private by default</span><span>Analytics included</span></div>
+      </section>
+
+      <section class="workspace user-only">
+        <div class="workspace-heading"><div><div class="eyebrow"><i></i> Your workspace</div><h1>Make every click <em>count.</em></h1></div><button class="button" id="focus-create">New link <span>+</span></button></div>
+        <form id="shorten-form" class="shorten-card">
+          <label for="url-input">Paste a long link to make it shorter</label>
+          <div class="input-row"><input id="url-input" type="url" placeholder="https://your-very-long-link.com/..." required /><button class="button" type="submit">Shorten <span>→</span></button></div>
+          <p class="form-message" id="form-message" aria-live="polite"></p>
+        </form>
+        <div class="overview"><article><span class="metric-label">Your links</span><strong id="link-count">0</strong><small>total active links</small></article><article><span class="metric-label">Total clicks</span><strong id="click-count">—</strong><small>across all your links</small></article><article><span class="metric-label">Status</span><strong class="status-good">Live</strong><small>your workspace is ready</small></article></div>
+        <section class="links-section"><div class="section-heading"><div><h2>Your links</h2><p>Manage and monitor every destination.</p></div><button id="refresh-links" class="icon-button" aria-label="Refresh links">↻</button></div><div id="links-list" class="links-list"><div class="empty-state">Your links will appear here.</div></div></section>
+      </section>
+
+      <section class="feature-grid guest-only"><article><span class="feature-number">01</span><h2>Built for momentum.</h2><p>Turn unwieldy URLs into neat, shareable links in seconds.</p></article><article><span class="feature-number">02</span><h2>See what lands.</h2><p>Understand engagement with clear, useful click data.</p></article><article><span class="feature-number">03</span><h2>Stay in control.</h2><p>Disable or update any destination whenever you need.</p></article></section>
+    </main>
+
+    <div class="modal-backdrop" id="auth-modal" aria-hidden="true"><section class="auth-card" role="dialog" aria-modal="true" aria-labelledby="auth-title"><button class="close-button" id="close-auth" aria-label="Close">×</button><span class="brand-mark">S</span><h2 id="auth-title">Welcome back</h2><p id="auth-subtitle">Log in to your link workspace.</p><form id="auth-form"><label>Email<input id="email-input" type="email" autocomplete="email" required placeholder="you@example.com" /></label><label>Password<input id="password-input" type="password" autocomplete="current-password" required minlength="6" placeholder="••••••••" /></label><button class="button full" type="submit" id="auth-submit">Log in <span>→</span></button><p class="form-message" id="auth-message" aria-live="polite"></p></form><p class="auth-switch"><span id="switch-copy">New to Shortly?</span> <button id="switch-auth">Create an account</button></p></section></div>
+    <div id="toast" class="toast" role="status"></div>
+    <script src="/app.js"></script>
+  </body>
+</html>
