@@ -44,7 +44,7 @@ initializeDatabase()
     app.listen(port, () => console.log(`Server running on port ${port}`));
   })
   .catch((err) => {
-    // console.error('Database initialization failed:', err.message);
+     console.error('Database initialization failed:',  err.stack || err);
     process.exit(1);
   });
 
