@@ -78,8 +78,6 @@ async function initializeDatabase() {
     )
   `);
 
-  await ensureLinksSchema();
-
   await pool.query(`
     CREATE TABLE IF NOT EXISTS link_clicks (
       id BIGSERIAL PRIMARY KEY,
@@ -89,6 +87,8 @@ async function initializeDatabase() {
       referrer TEXT
     )
   `);
+
+  await ensureLinksSchema();
 
   await pool.query(`
     CREATE INDEX IF NOT EXISTS idx_links_user_created_at
