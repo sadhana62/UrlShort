@@ -42,7 +42,18 @@ async function initializeRedis() {
     return null;
   }
 
-  redisClient = createClient({ url: redisUrl });
+  redisClient = createClient({
+    url: redisUrl,
+    socket: {
+      // Force IPv4: some cloud hosts resolve/route IPv6 to the target badly,
+      // which shows up as a TLS/TCP connection that opens then immediately
+      // closes ("Socket closed unexpectedly") even though the URL/creds are fine.
+      family: 4,
+      connectTimeout: 15000,
+      keepAlive: 30000,
+      reconnectStrategy: (retries) => Math.min(retries * 200, 5000),
+    },
+  });
 
   redisClient.on('error', (error) => {
     redisReady = false;
